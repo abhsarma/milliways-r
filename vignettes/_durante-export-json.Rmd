@@ -1,0 +1,132 @@
+---
+title: "Exporting the output of a multiverse to JSON for visualisation tools"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+params:
+  EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")
+vignette: >
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteIndexEntry{Religiosity example}
+  %\usepackage[UTF-8]{inputenc}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+library(dplyr)
+library(modelr)
+library(tidyr)
+library(ggplot2)
+library(purrr)
+library(broom)
+library(jsonlite)
+library(multiverse)
+devtools::load_all(".")
+```
+
+## Analysis of Durante et al.'s Fertility study:
+
+We first prepare the dataset for analysis:
+
+```{r cars}
+data("durante")
+
+data.raw.study2 = durante |> 
+  mutate(
+    Abortion = abs(7 - Abortion) + 1,
+    StemCell = abs(7 - StemCell) + 1,
+    Marijuana = abs(7 - Marijuana) + 1,
+    RichTax = abs(7 - RichTax) + 1,
+    StLiving = abs(7 - StLiving) + 1,
+    Profit = abs(7 - Profit) + 1,
+    FiscConsComp = FreeMarket + PrivSocialSec + RichTax + StLiving + Profit,
+    SocConsComp = Marriage + RestrictAbortion + Abortion + StemCell + Marijuana
+  )
+
+M1 = multiverse()
+```
+
+We can export this for the web visualiser's bottom right panel:
+
+```{r}
+export_input_data(data.raw.study2, './exports/durante/durante.json')
+```
+
+Next, we implement the multiverse analysis:
+
+```{multiverse default-m-1, inside = M1}
+df = data.raw.study2 %>%
+    mutate( ComputedCycleLength = StartDateofLastPeriod - StartDateofPeriodBeforeLast )  %>%
+    filter( branch(cycle_length,
+        "cl_option1" ~ TRUE,
+        "cl_option2" ~ ComputedCycleLength > 25 & ComputedCycleLength < 35,
+        "cl_option3" ~ ReportedCycleLength > 25 & ReportedCycleLength < 35
+    )) %>%
+    filter( branch(certainty,
+        "cer_option1" ~ TRUE,
+        "cer_option2" ~ Sure1 > 6 | Sure2 > 6
+    )) %>%
+    mutate(NextMenstrualOnset = branch(menstrual_calculation,
+        "mc_option1" %when% (cycle_length != "cl_option3") ~ StartDateofLastPeriod + ComputedCycleLength,
+        "mc_option2" %when% (cycle_length != "cl_option2") ~ StartDateofLastPeriod + ReportedCycleLength,
+        "mc_option3" ~ StartDateNext)
+    )  %>%
+    mutate(
+      CycleDay = 28 - (NextMenstrualOnset - DateTesting),
+      CycleDay = ifelse(WorkerID == 15, 11, ifelse(WorkerID == 16, 18, CycleDay)),
+      CycleDay = ifelse(CycleDay > 1 & CycleDay < 28, CycleDay, ifelse(CycleDay < 1, 1, 28))
+    ) %>%
+    mutate( Fertility = branch( fertile,
+        "fer_option1" ~ factor( ifelse(CycleDay >= 7 & CycleDay <= 14, "high", ifelse(CycleDay >= 17 & CycleDay <= 25, "low", NA)) ),
+        "fer_option2" ~ factor( ifelse(CycleDay >= 6 & CycleDay <= 14, "high", ifelse(CycleDay >= 17 & CycleDay <= 27, "low", NA)) ),
+        "fer_option3" ~ factor( ifelse(CycleDay >= 9 & CycleDay <= 17, "high", ifelse(CycleDay >= 18 & CycleDay <= 25, "low", NA)) ),
+        "fer_option4" ~ factor( ifelse(CycleDay >= 8 & CycleDay <= 14, "high", "low") ),
+        "fer_option5" ~ factor( ifelse(CycleDay >= 8 & CycleDay <= 17, "high", "low") )
+    )) %>%
+    mutate(RelationshipStatus = branch(relationship_status,
+        "rs_option1" ~ factor(ifelse(Relationship==1 | Relationship==2, 'Single', 'Relationship')),
+        "rs_option2" ~ factor(ifelse(Relationship==1, 'Single', 'Relationship')),
+        "rs_option3" ~ factor(ifelse(Relationship==1, 'Single', ifelse(Relationship==3 | Relationship==4, 'Relationship', NA))) )
+    )
+
+df = df %>%
+  mutate( RelComp = round((Rel1 + Rel2 + Rel3)/3, 2))
+
+fit_RelComp = lm( RelComp ~ Fertility * RelationshipStatus, data = df )
+
+r2 = summary(fit_RelComp)$r.squared
+
+summary_RelComp = fit_RelComp %>% 
+    broom::tidy( conf.int = TRUE )
+```
+
+
+Finally we execute the analysis:
+
+```{r, execute-multiverse}
+execute_multiverse(M1)
+```
+
+
+### Exports
+
+First, we export the code:
+
+```{r}
+export_code_json(M1, "./exports/durante/durante-code.json")
+```
+
+Next, we will export the data used for the milliways web visualizer:
+
+```{r}
+expand(M1) |> 
+  extract_variables(summary_RelComp, r2) |> 
+  unnest(summary_RelComp) |> 
+  export_results_json(term, estimate, std.error, filename = './exports/durante/durante-data.json')
+```
+
+
+
+

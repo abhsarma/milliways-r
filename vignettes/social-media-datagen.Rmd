@@ -1,0 +1,134 @@
+---
+title: "social-media-dataset-simulation"
+output: html_document
+date: "2023-12-09"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(scales)
+library(dagitty)
+```
+
+
+## Introduction
+
+In this document, we generate the dataset used as an example for the multiverse analysis. 
+Note: I do not recall the seed used for the original analysis, hence the dataset, and the results of the multiverse analysis may vary slightly.
+
+The dataset we are going to simulate will have the relationships outlined in the DAG below:
+
+```{r}
+g <- dagitty('dag {
+    I1 [pos="0.5,0"]
+    I2 [pos="1.5,0"]
+    I3 [pos="2.5,0"]
+    I4 [pos="3.5,0"]
+    parent_income [pos="0,2"]
+    sm_usage [pos="2,1"]
+    depression [pos="6,1"]
+    activity [pos="4,2"]
+    has_sibling [pos="4,3"]
+    age [pos="4,4"]
+    
+    sm_usage -> I1
+    sm_usage -> I2
+    sm_usage -> I3
+    sm_usage -> I4
+    parent_income -> sm_usage
+    sm_usage -> depression
+    sm_usage -> activity
+    activity -> depression
+    activity -> has_sibling
+    sm_usage -> has_sibling
+    depression -> has_sibling
+    age -> sm_usage
+    age -> depression
+    age -> has_sibling
+}')
+plot(g)
+```
+
+These variables are:
+
+- I1: self reported number of hours spent on social media per week
+- I2: self reported likert scale rating of social media usage (1 [very low/no usage at all] - 5 [very high usage])
+- I3: self reported number of friends/followers on social media across all platforms
+- I4: self reported number of posts shared in a week
+- self-reported age
+- self reported number of hours per week engaged in physical activity or exercise of any kind
+- Binary choice indicating whether participant has siblings
+- Age of siblings (if any)
+- Total parental income (rounded to the nearest $10k)
+
+## Simulation
+
+First, we define the correlation between all of the variables which impact one another:
+
+```{r}
+N = 300
+
+b_income_sm = 0.5
+b_sm_depression = 0.4
+b_sm_I1 = 0.7
+b_sm_I2 = 0.7
+b_sm_I3 = 0.15
+b_sm_I4 = 0.15
+b_sm_activity = 0.2
+b_depression_activity = -0.7
+b_sm_activity = -0.3
+b_age_sm = -0.15
+b_age_depression = -0.2
+b_siblings_sm = 0.2
+b_siblings_depression = -0.1
+b_siblings_activity = 0.3
+```
+
+We can now simulate the complete dataset. We adopt a two step approach when simulating. First, we define every independent variable as a standard normal distribution (i.e. mean = 0; sd = 1). We then calculate the dependent variables.
+
+```{r}
+set.seed(123)
+social_media_scaled = tibble(
+  parent_income = rnorm(N),
+  age = rnorm(N),
+  has_siblings = rbinom(N, 1, 0.72),
+  social_media = parent_income*b_income_sm + 
+                  age*b_age_sm +
+                  has_siblings * b_siblings_sm +
+                  rnorm(N, 0, sd = sqrt(1 - (b_income_sm^2 + b_age_sm^2 + b_siblings_sm^2))),
+  I1 = social_media*b_sm_I1 + rnorm(N, 0, sd = sqrt(1 - b_sm_I1^2)),
+  I2 = social_media*b_sm_I2 + rnorm(N, 0, sd = sqrt(1 - b_sm_I2^2)),
+  I3 = social_media*b_sm_I3 + rnorm(N, 0, sd = sqrt(1 - b_sm_I3^2)),
+  I4 = social_media*b_sm_I4 + rnorm(N, 0, sd = sqrt(1 - b_sm_I4^2)),
+  depression = social_media*b_sm_depression +
+              age*b_age_depression +
+              has_siblings * b_siblings_depression +
+              rnorm(N, 0, sd = sqrt(1 - (b_sm_depression^2 + b_age_depression^2 + b_siblings_depression^2))),
+  physical_activity = social_media*b_sm_activity +
+              has_siblings * b_siblings_activity +
+              depression * b_depression_activity +
+              rnorm(N, 0, sd = sqrt(1 - (b_sm_activity^2 + b_siblings_activity^2 + b_depression_activity^2)))
+)
+```
+
+Finally, we scale the variables appropriately:
+
+```{r}
+social_media = social_media_scaled |> 
+  # we transform all the variables to the appropriate scale
+  mutate(
+    parent_income = round(exp(parent_income*0.2 + 4.5)) * 1000,
+    age = round(rescale(age, to = c(11, 17))),
+    I1 = exp(I1*0.3 + 3),
+    I2 = round(rescale(I2, to = c(1, 7))),
+    I3 = round(exp(I3*0.5 + 6)),
+    physical_activity = round(exp(rescale(physical_activity, c(0, 2.5))))
+  )
+
+head(social_media)
+```
+
+
+
+

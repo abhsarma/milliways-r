@@ -1,0 +1,34 @@
+Package: milliwaysR
+Version: 0.1.0
+Date: 2022-11-3
+Title: R Interface to Milliways, a visualisation tool to support principled evaluation of multiverse analyses
+Authors@R: c(person("Anon", "ymous", role = c("aut", "cre"), email = "anon@email.com"))
+Maintainer: Anon <anon@email.com>
+Description: More about what it does (maybe more than one line)
+    Use four spaces when indenting paragraphs within the Description.
+License: GPL (>= 3)
+Encoding: UTF-8
+RoxygenNote: 7.2.3
+SystemRequirements: npm (>= 8.19.2)
+Depends:
+    R (>= 3.5.0),
+    knitr (>= 1.3.2),
+    multiverse (>= 0.6.0)
+Imports:
+    cli,
+    attempt,
+    yesno,
+    processx,
+    dplyr (>= 0.8.1),
+    tidyr (>= 1.0.0),
+    tidyselect,
+    rlang (>= 0.4.0),
+    jsonlite,
+    magrittr,
+    distributional
+VignetteBuilder: 
+    knitr
+Language: en-US
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3

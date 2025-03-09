@@ -1,0 +1,215 @@
+---
+title: "_social_media-export-json"
+date: "`r Sys.Date()`"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+params:
+  EVAL: !r identical(Sys.getenv("NOT_CRAN"), "true")
+vignette: >
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteIndexEntry{Social media example}
+  %\usepackage[UTF-8]{inputenc}
+---
+
+```{r setup, include=FALSE}
+social_media = readRDS("../data/social_media.rds")
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(multiverse)
+devtools::load_all(".")
+```
+
+## Abstract
+In this paper, we investigate the relationship between social media usage in adolescents and depression, using a multiverse analysis [@Steegen2016]. Our findings suggest that the relationship is inconclusive, as the effect of social media usage regressed on self-reported ratings of depression appears to be possibly both positive and negative, depending on arbitrary choices in the data analysis process.
+
+## Introduction
+With the growing use of digital technology use, especially by younger, impressionable individuals, its impact on their well-being is of growing concern. Recent work has suggested that there may be an small, negative association between digital technology use and adolescent well-being [@Orben2019]. In this work, we focus specifically on usage of social media and its potential impact on mental well-being. Frequent social media usage can expose adolescents to toxic content, which is abundant on online platforms [@Vogel2021]. For example, Instagram has many posts with ``pro-eating disorder’’ content which it has struggled to moderate [@Chancellor2016, @Chancellor2016].
+
+To better assess the harms of social media usage on adolescents, we conduct a survey with N = 300 participants and investigate the association between social media usage and depression using a multiverse analysis. We report our findings below.
+
+## Data
+Our survey questionnaire consists of 10 items which includes the following:
+
+- I1: self reported number of hours spent on social media per week
+- I2: self reported likert scale rating of social media usage (1 [very low/no usage at all] - 5 [very high usage])
+- I3: self reported number of friends/followers on social media across all platforms
+- I4: self reported number of posts shared in a week
+- self-reported age
+- self reported number of hours per week engaged in physical activity or exercise of any kind
+- Binary choice indicating whether participant has siblings
+- Age of siblings (if any)
+- Total parental income (rounded to the nearest $10k)
+
+```{r}
+head(social_media)
+```
+
+```{r}
+M = multiverse()
+```
+
+
+```{r}
+export_input_data(social_media, './exports/social_media/sm-data.json')
+```
+
+
+## Analysis
+We plan to use a linear regression model with depression as the dependent variables.
+
+## Exclusion criteria
+As the data was collected through a survey, we may expect there to be some outliers. We consider four alternatives for outlier_exclusion : - analysing all cases (no exclusion) - cutting off values which are 2.5 SD from the mean - cutting off values which are 3.5 SD from the mean - cutting off values based on Tukey’s fences (first and third quartiles ± 1.5 times the interquartile range)
+
+The results in the current analysis reflect <mv param="outlier_exclusion"/>
+
+```{multiverse default-m-1, inside = M}
+df <- social_media
+
+IQR.I1 <- quantile(df$I1, probs = 0.75) - quantile(df$I1, probs = 0.25)
+IQR.I2 <- quantile(df$I2, probs = 0.75) - quantile(df$I2, probs = 0.25)
+IQR.I3 <- quantile(df$I3, probs = 0.75) - quantile(df$I3, probs = 0.25)
+IQR.I4 <- quantile(df$I4, probs = 0.75) - quantile(df$I4, probs = 0.25)
+
+df <- df |>
+  filter(branch(
+    outlier_exclusion,
+    "no_exclusion" ~ TRUE,
+    "one-half_interquartile_range" ~ (((I1 >= (quantile(I1, probs = 0.25) - 1.5 * IQR.I1)) & (I1 < (quantile(I1, probs = 0.75) + 1.5 * IQR.I1))) & ((I2 >= (quantile(I2, probs = 0.25) - 1.5 * IQR.I2)) & (I2 < (quantile(I2, probs = 0.75) + 1.5 * IQR.I2))) & ((I3 >= (quantile(I3, probs = 0.25) - 1.5 * IQR.I3)) & (I3 < (quantile(I3, probs = 0.75) + 1.5 * IQR.I3))) & ((I4 >= (quantile(I4, probs = 0.25) - 1.5 * IQR.I4)) & (I4 < (quantile(I4, probs = 0.75) + 1.5 * IQR.I4)))),
+    "two-half_sd_from_mean" ~ (((I1 > (mean(I1) - 2.5 * sd(I1))) & (I1 < (mean(I1) + 2.5 * sd(I1)))) & ((I2 > (mean(I2) - 2.5 * sd(I2))) & (I2 < (mean(I2) + 2.5 * sd(I2)))) & ((I3 > (mean(I3) - 2.5 * sd(I3))) & (I3 < (mean(I3) + 2.5 * sd(I3)))) & ((I4 > (mean(I4) - 2.5 * sd(I4))) & (I4 < (mean(I4) + 2.5 * sd(I4))))),
+    "three-half_sd_from_mean" ~ (((I1 > (mean(I1) - 3.5 * sd(I1))) & (I1 < (mean(I1) + 3.5 * sd(I1)))) & ((I2 > (mean(I2) - 3.5 * sd(I2))) & (I2 < (mean(I2) + 3.5 * sd(I2)))) & ((I3 > (mean(I3) - 3.5 * sd(I3))) & (I3 < (mean(I3) + 3.5 * sd(I3)))) & ((I4 > (mean(I4) - 3.5 * sd(I4))) & (I4 < (mean(I4) + 3.5 * sd(I4)))))
+  )) |>
+  mutate(
+    I1 = scale(I1), 
+    I2 = scale(I2), 
+    I3 = scale(I3), 
+    I4 = scale(I4)
+  )
+```
+
+## Operationalising social media usage
+
+As we have four measures of social media usage, we can use each measure individually, or any possible combination of the four. However, we observe that the measures I3 and I4 are not as strongly correlated with depression as compared to the measures I1 and I2. As such we only consider to composite measures: I1 + I2 and I1 + I2 + I3 + I4. Thus, we include six operationalisations of <mv param="SM_predictor"/>
+
+```{multiverse default-m-2, inside = M}
+df <- df |> mutate(
+  social_media_usage = branch(SM_predictor, 
+                              "I1" ~ I1, 
+                              "I2" ~ I2, 
+                              "I3" ~ I3, 
+                              "I4" ~ I4, 
+                              "I1_I2_composite" ~ I1 + I2, 
+                              "I1_I2_I3_I4_composite" ~ I1 + I2 + I3 + I4))
+```
+
+## Covariate selection
+
+We consider the inclusion/exclusion of three covariates:  <mv param="age_covariate"/>, <mv param="activity_covariate"/>, and <mv param="sibling_covariate"/>. However, prior work suggests that including parental_income as a covariate will likely decrease precision, and thus we do not include this variable in our regression.
+
+```{multiverse default-m-3, inside = M}
+fit <- lm(depression ~ social_media_usage + 
+  branch(age_covariate, "not_included" ~ NULL, "included" ~ age) + 
+  branch(activity_covariate, "not_included" ~ NULL, "included" ~ physical_activity) + 
+  branch(sibling_covariate, "not_included" ~ NULL, "included" ~ factor(has_siblings)),
+  data = df
+)
+
+r.squared = summary(fit)$adj.r.squared
+
+model.results <- broom::tidy(fit, conf.int = TRUE)
+```
+
+
+```{r}
+execute_multiverse(M)
+```
+
+
+## Results
+Below, we show the estimated coefficients of our regresion model
+
+```{r}
+model.results
+```
+
+
+The estimated effect of social_media_usage on depression is shown in the figure below, along with other estimated coefficients. If the coefficient was negative, it would imply that increased social media usage is inversely associated with depression i.e. social media usage has a positive impact on mental well being; on the other hand if it is positive, it would imply that social media usage is positively associated with depression i.e. social media usage has a negative impact on mental well being. Finally, if the coefficient is very close to zero, it suggests that the the relationship is weak.
+
+
+```{r}
+model.results |>
+    filter(term != "(Intercept)") |>
+    ggplot() + geom_pointrange(aes(y = term, x = estimate, xmin = conf.low, xmax = conf.high)) +
+    geom_vline(aes(xintercept = 0)) + xlim(c(-2, 2)) + ylab("Modelcoefficients") +
+    theme_minimal() + theme(axis.title.x = element_blank())
+```
+
+From the variation in the result, as shown in Figure 1, the impact of social media usage on depression appears to vary based on which choices we make in the data analysis process. This is more evident from the specification curve plot (Figure 2) which shows the variation in the outcome, with only less than half the specifications suggesting a positive effect.
+
+```{r}
+data.spec_curve = extract_variables(M, model.results) |>
+  unnest(model.results) |>
+  # filter(stringr::str_detect(term, "^I")) |>
+  filter(term == "social_media_usage") |>
+  select( .universe, !! names(parameters(M)), estimate, p.value, conf.low, conf.high ) |>
+  arrange( estimate ) |>
+  mutate( 
+    .universe = 1:nrow(.),
+    effect = ifelse(p.value < 0.05, ifelse(estimate < 0, "negative", "positive"), "not significant")
+  )
+
+p1 <- data.spec_curve |>
+  gather( "parameter_name", "parameter_option", !! names(parameters(M)) ) |>
+  mutate( parameter_name = factor(stringr::str_replace(parameter_name, "_", "\n"))  ) |>
+  ggplot() +
+  geom_point( aes(x = .universe, y = parameter_option, color = effect), size = 1 ) +
+  labs( x = "universe #", y = "option included in the analysis specification") + 
+  facet_grid(parameter_name ~ ., space="free_y", scales="free_y", switch="y")+ 
+  scale_colour_manual(values=c("#FF684B", "#999999", "#6E52EB")) +
+  theme_minimal() +
+  theme(strip.placement = "outside",
+        strip.background = element_rect(fill=NA,colour=NA),
+        panel.spacing.x=unit(0.15,"cm"), 
+        strip.text.y = element_text(angle = 180, face="bold", size=10), 
+        panel.spacing = unit(0.25, "lines")
+      )
+
+p2 <- data.spec_curve |>
+  ggplot() +
+  ggdist::geom_pointinterval(aes(x = .universe, y = estimate, ymin = conf.low, ymax = conf.high, color = effect)) +
+  labs(x = "", y = "effect size") + 
+  theme_minimal() +
+  scale_colour_manual(values=c("#FF684B", "#999999", "#6E52EB"))
+
+cowplot::plot_grid(p2, p1, axis = "bltr",  align = "v", ncol = 1, rel_heights = c(1, 3))
+```
+
+
+## Conclusion
+
+As a result, we conclude that the association between social media usage and depression is not robust to arbitrary choices in the data analysis process, and any impact that prior work has found on social media usage on depression is likely due to idiosyncratic choices in the data analysis process.
+
+
+
+```{r}
+extract_variables(M, r.squared) |> 
+  ggplot(aes(r.squared)) +
+  geom_histogram()
+```
+
+
+
+```{r, eval = FALSE, include = FALSE}
+# used for multiverse vis
+export_code_json(M, "./exports/social_media/sm-code.json")
+
+extract_variables(M, model.results) |>
+  unnest(model.results) |>
+  filter(term == "social_media_usage") |>
+  select(-c(statistic:conf.high) ) |>
+  get_ccurve(term, estimate, std.error) |> 
+  append_point_estimate(extract_variables(M, r.squared), r.squared) |> 
+  export_results_json('./exports/social_media/sm-results.json')
+```
+
