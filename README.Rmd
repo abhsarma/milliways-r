@@ -1,0 +1,42 @@
+## Introduction
+
+MilliwaysR is the R interface for Milliways: the interactive multiverse analysis visualisation tool
+
+### Installation
+
+- Install the R library: `devtools::install()`
+- On installation of the R library in a machine, the files in the `inst/` directory will be saved 
+- `milliways` provides functions such as `milliways_install()`, `start()` etc. to initialise the visualisation
+
+## Example usage
+
+First, you will need to install Milliways in your system. You can do so by calling the function: `milliways_install()`
+
+To open Milliways with the results of a multiverse analysis, you can use the `start()` function. This function requires four arguments:
+
+- `results`: (path to) a JSON file which contains the estimates from each universe in the multiverse analysis.
+- `code`: (path to) a JSON file which contains the code used to generate the multiverse object.
+- `data`: (path to) a JSON file which contains the dataset used in the multiverse analysis.
+- `analysis`: (path to) the Explorable Multiverse Analysis Report (EMAR) HTML file
+
+We provide samples of this in the directory `dist`. For example, to initialise Milliways with the multiverse analysis of the hurricane dataset, you can call the following command:
+
+```
+start(
+    "dist/hurricane/hurricane-data.json",
+    "dist/hurricane/hurricane-code.json",
+    "dist/hurricane/hurricane.json",
+    "dist/hurricane/analysis.html"
+)
+```
+
+
+## Development
+
+If you are interested in supporting the development of the visualisation tool:
+
+- The visualisation tool is built using Svelte.js with Rollup  
+- The files used in the development of the visualisation library can be found in `inst/milliways/` directory
+- In the `inst/milliways/`, please do not use `npm` to install all the node modules and run the visualisation tool in the dev mode
+- To update the visualisation tool, install and make changes to the visualisation in a separate directory
+- I will then pull the updates into this project
