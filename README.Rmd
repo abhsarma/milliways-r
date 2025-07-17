@@ -1,3 +1,17 @@
+---
+output: 
+  md_document:
+    variant: markdown_github
+---
+
+```{r chunk_options, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+
 ## Introduction
 
 MilliwaysR is the R interface for Milliways: the interactive multiverse analysis visualisation tool

@@ -19,7 +19,7 @@
 #' @export
 milliways_install = function(force = FALSE) {
   if (!node_available()) {
-    cli_text(col_red("Node is required to open mvis but is not installed. Please install the current version of node from {.url https://nodejs.org/en/}"))
+    cli_text(col_red("Node is required to open Milliways but is not installed. Please install the current version of node from {.url https://nodejs.org/en/}"))
   } else {
     # mvis is not installed
     ok <- yesno2("This will install our app on your local library. Are you ok with that? ")

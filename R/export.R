@@ -96,8 +96,10 @@ globalVariables(c(".max", ".min", "cdf.x", "cdf.y", "limits", "universe"))
 #' @importFrom distributional cdf
 #' @importFrom distributional dist_normal
 #' @importFrom purrr map2
+#' @importFrom purrr map_chr
 #' @importFrom tidyr nest
 #' @importFrom tidyselect starts_with
+#' @importFrom styler style_text
 #'
 #' @rdname export_json
 #' @export
@@ -145,17 +147,14 @@ export_results_dist_json = function(x, term, dist, filename) {
       ), 
       -.min, -.max
     )
-  
-  .res_df = nest(.res_df,  results = c(term:cdf.y))
-  
   if (!missing(filename)) {
     write_json(
-      select(.res_df, -!!dist), 
+      nest(select(.res_df, -!!dist),  results = c(term:cdf.y)), 
       filename, 
       pretty = TRUE
     )
   } else {
-    return(.res_df)
+    return(nest(.res_df,  results = c(term:cdf.y)))
   }
 }
 

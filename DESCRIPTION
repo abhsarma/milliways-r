@@ -8,7 +8,7 @@ Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.
 License: GPL (>= 3)
 Encoding: UTF-8
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
 SystemRequirements: npm (>= 8.19.2)
 Depends:
     R (>= 3.5.0),
@@ -25,6 +25,7 @@ Imports:
     rlang (>= 0.4.0),
     jsonlite,
     magrittr,
+    styler,
     distributional
 VignetteBuilder: 
     knitr
