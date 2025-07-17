@@ -30,7 +30,7 @@ milliways_install = function(force = FALSE) {
       p = process$new(
         command = "npm", 
         args = c("install"),
-        wd = system.file("milliways", package = "milliways")
+        wd = system.file("milliways", package = "milliwaysR")
       )
   
       while(p$is_alive()) {
