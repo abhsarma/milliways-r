@@ -28,7 +28,7 @@
 #' @name start
 #' @export
 start = function (results, code, data, analysis) {
-  milliways_exists = run("npm", "list", wd = system.file("milliways", package = "milliways"), error_on_status = FALSE)
+  milliways_exists = run("npm", "list", wd = system.file("milliways", package = "milliwaysR"), error_on_status = FALSE)
   
   if ((!isTRUE(grep("milliways", milliways_exists$stdout) > 0)) | milliways_exists$status ) {
     cli_text(col_red("Milliways is missing"))
@@ -60,25 +60,25 @@ start = function (results, code, data, analysis) {
 
     run(
       command = 'cp',
-      args = c(results, paste0(find.package("milliways"), '/milliways/static/data/data.json'))
+      args = c(results, paste0(find.package("milliwaysR"), '/milliways/static/data/results.json'))
     )
     run(
       command = 'cp',
-      args = c(code, paste0(find.package("milliways"), '/milliways/static/data/code.json'))
+      args = c(code, paste0(find.package("milliwaysR"), '/milliways/static/data/code.json'))
     )
     run(
       command = 'cp',
-      args = c(data, paste0(find.package("milliways"), '/milliways/static/data/raw-data.json'))
+      args = c(data, paste0(find.package("milliwaysR"), '/milliways/static/data/input-data.json'))
     )
     run(
       command = 'cp',
-      args = c(analysis, paste0(find.package("milliways"), '/milliways/public/analysis-doc.html'))
+      args = c(analysis, paste0(find.package("milliwaysR"), '/milliways/public/analysis-doc.html'))
     )
   
     p = process$new(
       command = "npm",
       args = c("run", "build"),
-      wd = system.file("milliways", package = "milliways")
+      wd = system.file("milliways", package = "milliwaysR")
     )
   
     while(p$is_alive()) {
@@ -95,7 +95,7 @@ start = function (results, code, data, analysis) {
     process$new(
       command = "npm",
       args = c("run", "start", "&", "sleep", "3"),
-      wd = system.file("milliways", package = "milliways")
+      wd = system.file("milliways", package = "milliwaysR")
     )
     
     cli_text(

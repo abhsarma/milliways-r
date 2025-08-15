@@ -11,7 +11,7 @@ compile = function () {
 
   if (Sys.which("monolith") == "") {
     cli_text(style_bold(text_red("monolith is not installed")))
-    cli_text(style_bold(text_red("monolith is required to compile MVis")))
+    cli_text(style_bold(text_red("monolith is required to compile Milliways")))
     cli_text("please install monolith: {.url https://github.com/Y2Z/monolith}")
   } else {
 
