@@ -1,32 +1,37 @@
 ## Introduction
 
-MilliwaysR is the R interface for Milliways: the interactive multiverse
+MilliwaysR is the R interface for Milliways: an interactive multiverse
 analysis visualisation tool
 
 ### Installation
 
--   Install the R library: `devtools::install()`
--   On installation of the R library in a machine, the files in the
-    `inst/` directory will be saved
--   `milliways` provides functions such as `milliways_install()`,
-    `start()` etc. to initialise the visualisation
+-   Install the R library:
+    `devtools::install_github("abhsarma/milliways-r")`
+-   Upon the installation of the R library on your machine, the
+    directory `milliways/` (which is in the `inst/` directory) will be
+    saved to an internal directory. Milliways is a web application which
+    will need to be installed on your computer.
 
-## Example usage
+### Usage
 
-First, you will need to install Milliways in your system. You can do so
-by calling the function: `milliways_install()`
-
-To open Milliways with the results of a multiverse analysis, you can use
-the `start()` function. This function requires four arguments:
-
--   `results`: (path to) a JSON file which contains the estimates from
-    each universe in the multiverse analysis.
--   `code`: (path to) a JSON file which contains the code used to
-    generate the multiverse object.
--   `data`: (path to) a JSON file which contains the dataset used in the
-    multiverse analysis.
--   `analysis`: (path to) the Explorable Multiverse Analysis Report
-    (EMAR) HTML file
+-   First, you will need to install the `milliways` web application. Run
+    `milliways_install()` in the R console
+    -   Milliways requires Node.js and npm. If you do not have node
+        installed, please install [Node.js](https://nodejs.org/en/).
+-   The Milliways app runs by creating a local server. `MilliwaysR`
+    provides a wrapper around this process so that you can start a node
+    server through the R console. Simply use the `start()` function
+    provided by `MilliwaysR`. This function requires four arguments:
+    -   `results`: (path to) a JSON file which contains the estimates
+        from each universe in the multiverse analysis.
+    -   `code`: (path to) a JSON file which contains the code used to
+        generate the multiverse object.
+    -   `data`: (path to) a JSON file which contains the dataset used in
+        the multiverse analysis.
+    -   `analysis`: (path to) the Explorable Multiverse Analysis Report
+        (EMAR) HTML file
+-   Once you have executed `start()`, it will initialise the
+    visualisation
 
 We provide samples of this in the directory `dist`. For example, to
 initialise Milliways with the multiverse analysis of the hurricane
@@ -47,8 +52,21 @@ tool:
 -   The visualisation tool is built using Svelte.js with Rollup  
 -   The files used in the development of the visualisation library can
     be found in `inst/milliways/` directory
--   In the `inst/milliways/`, please do not use `npm` to install all the
-    node modules and run the visualisation tool in the dev mode
--   To update the visualisation tool, install and make changes to the
-    visualisation in a separate directory
--   I will then pull the updates into this project
+-   In the `inst/milliways/`, please do not run `npm install` as this
+    will install all of dependencies into the directory. Instead, you
+    should copy and install Milliways in a separate directory (or
+    optionally, download
+    [Milliways](https://github.com/abhsarma/milliways) from Github). You
+    can them make changes to the visualisation in this separate
+    directory
+-   You can push those changes to
+    [Milliways](https://github.com/abhsarma/milliways) on Github. I will
+    then pull the updates into this project
+
+### Tips for development (of the R library)
+
+Because `milliwaysR` uses the command line, testing and debugging can be
+tricky. The commonly adopted workflow of using `devtools::load_all(".")`
+to load package functions does not work. Instead, you will need to use
+`devtools::install()` which will install the library into the system
+directory where R packages are typically installed.
